@@ -561,6 +561,9 @@ class Canvas(QWidget):
         """Convert from widget-logical coordinates to painter-logical coordinates."""
         return point / self.scale - self.offset_to_center()
 
+    def change_font_size(self, inc):
+        self.label_font_size = max(2, self.label_font_size + inc)
+
     def offset_to_center(self):
         s = self.scale
         area = super(Canvas, self).size()

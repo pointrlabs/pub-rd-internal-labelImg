@@ -246,6 +246,11 @@ class MainWindow(QMainWindow, WindowMixin):
                                     get_str('highlightPolygons'), enabled=True, checkable=True)
         highlight_polygons.trigger()
 
+        increase_font_size = action(get_str('increaseFontSize'), partial(self.add_font_size, 2),
+                                    'Shift+=', 'increaseFontSize', get_str('increaseFontSize'), enabled=True)
+        decrease_font_size = action(get_str('decreaseFontSize'), partial(self.add_font_size, -2),
+                                    'Shift+-', 'decreaseFontSize', get_str('decreaseFontSize'), enabled=True)
+
         def get_format_meta(format):
             """
             returns a tuple containing (title, icon_name) of the selected format
@@ -311,11 +316,11 @@ class MainWindow(QMainWindow, WindowMixin):
         self.zoom_widget.setEnabled(False)
 
         zoom_in = action(get_str('zoomin'), partial(self.add_zoom, 10),
-                         'Ctrl++', 'zoom-in', get_str('zoominDetail'), enabled=False)
+                         'Ctrl+=', 'zoom-in', get_str('zoominDetail'), enabled=False)
         zoom_out = action(get_str('zoomout'), partial(self.add_zoom, -10),
                           'Ctrl+-', 'zoom-out', get_str('zoomoutDetail'), enabled=False)
         zoom_org = action(get_str('originalsize'), partial(self.set_zoom, 100),
-                          'Ctrl+=', 'zoom', get_str('originalsizeDetail'), enabled=False)
+                          'Ctrl++', 'zoom', get_str('originalsizeDetail'), enabled=False)
         fit_window = action(get_str('fitWin'), self.set_fit_window,
                             'Ctrl+F', 'fit-window', get_str('fitWinDetail'),
                             checkable=True, enabled=False)
@@ -439,6 +444,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.display_label_option,
             labels, advanced_mode, None,
             highlight_polygons, None,
+            decrease_font_size, increase_font_size, None,
             hide_all, show_all, None,
             zoom_in, zoom_out, zoom_org, None,
             fit_window, fit_width, None,
@@ -1014,6 +1020,9 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def add_zoom(self, increment=10):
         self.set_zoom(self.zoom_widget.value() + increment)
+
+    def add_font_size(self, increment=2):
+        self.canvas.change_font_size(increment)
 
     def zoom_request(self, delta):
         # get the current scrollbar positions
