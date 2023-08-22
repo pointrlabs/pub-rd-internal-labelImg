@@ -13,9 +13,11 @@ from libs.utils import distance
 import sys
 
 DEFAULT_LINE_COLOR = QColor(0, 255, 0, 128)
-DEFAULT_FILL_COLOR = QColor(255, 0, 0, 128)
+# DEFAULT_FILL_COLOR = QColor(255, 0, 0, 128)
+DEFAULT_FILL_COLOR = QColor(255, 0, 0, 60)
 DEFAULT_SELECT_LINE_COLOR = QColor(255, 255, 255)
-DEFAULT_SELECT_FILL_COLOR = QColor(0, 128, 255, 155)
+# DEFAULT_SELECT_FILL_COLOR = QColor(0, 128, 255, 155)
+DEFAULT_SELECT_FILL_COLOR = QColor(0, 128, 255, 175)
 DEFAULT_VERTEX_FILL_COLOR = QColor(0, 255, 0, 255)
 DEFAULT_HVERTEX_FILL_COLOR = QColor(255, 0, 0)
 
@@ -34,7 +36,7 @@ class Shape(object):
     vertex_fill_color = DEFAULT_VERTEX_FILL_COLOR
     h_vertex_fill_color = DEFAULT_HVERTEX_FILL_COLOR
     point_type = P_ROUND
-    point_size = 16
+    point_size = 10
     scale = 1.0
     label_font_size = 8
 

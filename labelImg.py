@@ -242,6 +242,10 @@ class MainWindow(QMainWindow, WindowMixin):
         save = action(get_str('save'), self.save_file,
                       'Ctrl+S', 'save', get_str('saveDetail'), enabled=False)
 
+        highlight_polygons = action(get_str('highlightPolygons'), self.highlight_polygons, None, 'highlight',
+                                    get_str('highlightPolygons'), enabled=True, checkable=True)
+        highlight_polygons.trigger()
+
         def get_format_meta(format):
             """
             returns a tuple containing (title, icon_name) of the selected format
@@ -434,6 +438,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.single_class_mode,
             self.display_label_option,
             labels, advanced_mode, None,
+            highlight_polygons, None,
             hide_all, show_all, None,
             zoom_in, zoom_out, zoom_org, None,
             fit_window, fit_width, None,
@@ -456,7 +461,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.advanced = (
             open, open_dir, change_save_dir, open_next_image, open_prev_image, save, save_format, None,
             create_mode, edit_mode, None,
-            hide_all, show_all)
+            hide_all, show_all, highlight_polygons)
 
         self.statusBar().showMessage('%s started.' % __appname__)
         self.statusBar().show()
@@ -1548,6 +1553,9 @@ class MainWindow(QMainWindow, WindowMixin):
                 return True
             else:
                 return False
+
+    def highlight_polygons(self, _value=False):
+        self.canvas.highlight_polygons = _value
 
     def discard_changes_dialog(self):
         yes, no, cancel = QMessageBox.Yes, QMessageBox.No, QMessageBox.Cancel

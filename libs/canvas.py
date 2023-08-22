@@ -65,6 +65,7 @@ class Canvas(QWidget):
         self.setFocusPolicy(Qt.WheelFocus)
         self.verified = False
         self.draw_square = False
+        self.highlight_polygons = False
 
         # initialisation for panning
         self.pan_initial_pos = QPoint()
@@ -519,6 +520,8 @@ class Canvas(QWidget):
         for shape in self.shapes:
             if (shape.selected or not self._hide_background) and self.isVisible(shape):
                 shape.fill = shape.selected or shape == self.h_shape
+                if self.highlight_polygons:
+                    shape.fill = True
                 shape.paint(p)
         if self.current:
             self.current.paint(p)
