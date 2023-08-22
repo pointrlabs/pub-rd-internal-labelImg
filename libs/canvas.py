@@ -49,7 +49,7 @@ class Canvas(QWidget):
         self.offsets = QPointF(), QPointF()
         self.scale = 1.0
         self.overlay_color = None
-        self.label_font_size = 8
+        self.label_font_size = 16
         self.pixmap = QPixmap()
         self.visible = {}
         self._hide_background = False
