@@ -80,15 +80,17 @@ class YOLOWriter:
 
 class YoloReader:
 
-    def __init__(self, file_path, image, class_list_path=None):
+    def __init__(self, file_path, image, default_class_list_path, class_list_path=None):
         # shapes type:
         # [labbel, [(x1,y1), (x2,y2), (x3,y3), (x4,y4)], color, color, difficult]
         self.shapes = []
         self.file_path = file_path
 
         if class_list_path is None:
-            dir_path = os.path.dirname(os.path.realpath(self.file_path))
-            self.class_list_path = os.path.join(dir_path, "classes.txt")
+            file_path = os.path.join(os.path.dirname(os.path.realpath(self.file_path)), "classes.txt")
+            if not os.path.exists(file_path):
+                file_path = default_class_list_path
+            self.class_list_path = file_path
         else:
             self.class_list_path = class_list_path
 
@@ -136,7 +138,7 @@ class YoloReader:
     def parse_yolo_format(self):
         bnd_box_file = open(self.file_path, 'r')
         for bndBox in bnd_box_file:
-            class_index, x_center, y_center, w, h = bndBox.strip().split(' ')
+            class_index, x_center, y_center, w, h = bndBox.strip().split(' ')[0:5]
             label, x_min, y_min, x_max, y_max = self.yolo_line_to_shape(class_index, x_center, y_center, w, h)
 
             # Caveat: difficult flag is discarded when saved as yolo format.

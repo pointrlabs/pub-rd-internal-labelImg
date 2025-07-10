@@ -107,6 +107,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self._beginner = True
         self.screencast = "https://youtu.be/p0nR2YsCY_U"
 
+        self.default_prefdef_class_file = default_prefdef_class_file
+
         # Load predefined classes to the list
         self.load_predefined_classes(default_prefdef_class_file)
 
@@ -242,6 +244,15 @@ class MainWindow(QMainWindow, WindowMixin):
         save = action(get_str('save'), self.save_file,
                       'Ctrl+S', 'save', get_str('saveDetail'), enabled=False)
 
+        highlight_polygons = action(get_str('highlightPolygons'), self.highlight_polygons, None, 'highlight',
+                                    get_str('highlightPolygons'), enabled=True, checkable=True)
+        highlight_polygons.trigger()
+
+        increase_font_size = action(get_str('increaseFontSize'), partial(self.add_font_size, 2),
+                                    'Shift+=', 'increaseFontSize', get_str('increaseFontSize'), enabled=True)
+        decrease_font_size = action(get_str('decreaseFontSize'), partial(self.add_font_size, -2),
+                                    'Shift+-', 'decreaseFontSize', get_str('decreaseFontSize'), enabled=True)
+
         def get_format_meta(format):
             """
             returns a tuple containing (title, icon_name) of the selected format
@@ -307,11 +318,11 @@ class MainWindow(QMainWindow, WindowMixin):
         self.zoom_widget.setEnabled(False)
 
         zoom_in = action(get_str('zoomin'), partial(self.add_zoom, 10),
-                         'Ctrl++', 'zoom-in', get_str('zoominDetail'), enabled=False)
+                         'Ctrl+=', 'zoom-in', get_str('zoominDetail'), enabled=False)
         zoom_out = action(get_str('zoomout'), partial(self.add_zoom, -10),
                           'Ctrl+-', 'zoom-out', get_str('zoomoutDetail'), enabled=False)
         zoom_org = action(get_str('originalsize'), partial(self.set_zoom, 100),
-                          'Ctrl+=', 'zoom', get_str('originalsizeDetail'), enabled=False)
+                          'Ctrl++', 'zoom', get_str('originalsizeDetail'), enabled=False)
         fit_window = action(get_str('fitWin'), self.set_fit_window,
                             'Ctrl+F', 'fit-window', get_str('fitWinDetail'),
                             checkable=True, enabled=False)
@@ -434,6 +445,8 @@ class MainWindow(QMainWindow, WindowMixin):
             self.single_class_mode,
             self.display_label_option,
             labels, advanced_mode, None,
+            highlight_polygons, None,
+            decrease_font_size, increase_font_size, None,
             hide_all, show_all, None,
             zoom_in, zoom_out, zoom_org, None,
             fit_window, fit_width, None,
@@ -456,7 +469,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.advanced = (
             open, open_dir, change_save_dir, open_next_image, open_prev_image, save, save_format, None,
             create_mode, edit_mode, None,
-            hide_all, show_all)
+            hide_all, show_all, highlight_polygons)
 
         self.statusBar().showMessage('%s started.' % __appname__)
         self.statusBar().show()
@@ -1010,6 +1023,9 @@ class MainWindow(QMainWindow, WindowMixin):
     def add_zoom(self, increment=10):
         self.set_zoom(self.zoom_widget.value() + increment)
 
+    def add_font_size(self, increment=2):
+        self.canvas.change_font_size(increment)
+
     def zoom_request(self, delta):
         # get the current scrollbar positions
         # calculate the percentages ~ coordinates
@@ -1217,7 +1233,7 @@ class MainWindow(QMainWindow, WindowMixin):
         assert not self.image.isNull(), "cannot paint null image"
         self.canvas.scale = 0.01 * self.zoom_widget.value()
         self.canvas.overlay_color = self.light_widget.color()
-        self.canvas.label_font_size = int(0.02 * max(self.image.width(), self.image.height()))
+        # self.canvas.label_font_size = int(0.02 * max(self.image.width(), self.image.height()))
         self.canvas.adjustSize()
         self.canvas.update()
 
@@ -1357,7 +1373,7 @@ class MainWindow(QMainWindow, WindowMixin):
             target_dir_path = ustr(default_open_dir_path)
         self.last_open_dir = target_dir_path
         self.import_dir_images(target_dir_path)
-        self.default_save_dir = target_dir_path
+        # self.default_save_dir = target_dir_path
         if self.file_path:
             self.show_bounding_box_from_annotation_file(file_path=self.file_path)
 
@@ -1549,6 +1565,9 @@ class MainWindow(QMainWindow, WindowMixin):
             else:
                 return False
 
+    def highlight_polygons(self, _value=False):
+        self.canvas.highlight_polygons = _value
+
     def discard_changes_dialog(self):
         yes, no, cancel = QMessageBox.Yes, QMessageBox.No, QMessageBox.Cancel
         msg = u'You have unsaved changes, would you like to save them and proceed?\nClick "No" to undo all changes.'
@@ -1636,9 +1655,9 @@ class MainWindow(QMainWindow, WindowMixin):
             return
 
         self.set_format(FORMAT_YOLO)
-        t_yolo_parse_reader = YoloReader(txt_path, self.image)
+        t_yolo_parse_reader = YoloReader(txt_path, self.image, self.default_prefdef_class_file)
         shapes = t_yolo_parse_reader.get_shapes()
-        print(shapes)
+        # print(shapes)
         self.load_labels(shapes)
         self.canvas.verified = t_yolo_parse_reader.verified
 
@@ -1694,16 +1713,16 @@ def get_main_app(argv=None):
     app.setWindowIcon(new_icon("app"))
     # Tzutalin 201705+: Accept extra agruments to change predefined class file
     argparser = argparse.ArgumentParser()
-    argparser.add_argument("image_dir", nargs="?")
-    argparser.add_argument("class_file",
+    argparser.add_argument("--image_dir", nargs="?")
+    argparser.add_argument("--class_file",
                            default=os.path.join(os.path.dirname(__file__), "data", "predefined_classes.txt"),
                            nargs="?")
-    argparser.add_argument("save_dir", nargs="?")
+    argparser.add_argument("--save_dir", nargs="?")
     args = argparser.parse_args(argv[1:])
 
-    args.image_dir = args.image_dir and os.path.normpath(args.image_dir)
-    args.class_file = args.class_file and os.path.normpath(args.class_file)
-    args.save_dir = args.save_dir and os.path.normpath(args.save_dir)
+    args.image_dir = args.image_dir and os.path.abspath(os.path.normpath(args.image_dir))
+    args.class_file = args.class_file and os.path.abspath(os.path.normpath(args.class_file))
+    args.save_dir = args.save_dir and os.path.abspath(os.path.normpath(args.save_dir))
 
     # Usage : labelImg.py image classFile saveDir
     win = MainWindow(args.image_dir,

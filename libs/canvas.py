@@ -49,7 +49,7 @@ class Canvas(QWidget):
         self.offsets = QPointF(), QPointF()
         self.scale = 1.0
         self.overlay_color = None
-        self.label_font_size = 8
+        self.label_font_size = 16
         self.pixmap = QPixmap()
         self.visible = {}
         self._hide_background = False
@@ -65,6 +65,7 @@ class Canvas(QWidget):
         self.setFocusPolicy(Qt.WheelFocus)
         self.verified = False
         self.draw_square = False
+        self.highlight_polygons = False
 
         # initialisation for panning
         self.pan_initial_pos = QPoint()
@@ -519,6 +520,8 @@ class Canvas(QWidget):
         for shape in self.shapes:
             if (shape.selected or not self._hide_background) and self.isVisible(shape):
                 shape.fill = shape.selected or shape == self.h_shape
+                if self.highlight_polygons:
+                    shape.fill = True
                 shape.paint(p)
         if self.current:
             self.current.paint(p)
@@ -557,6 +560,9 @@ class Canvas(QWidget):
     def transform_pos(self, point):
         """Convert from widget-logical coordinates to painter-logical coordinates."""
         return point / self.scale - self.offset_to_center()
+
+    def change_font_size(self, inc):
+        self.label_font_size = max(2, self.label_font_size + inc)
 
     def offset_to_center(self):
         s = self.scale
