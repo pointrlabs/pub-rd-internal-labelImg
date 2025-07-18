@@ -777,7 +777,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     # Tzutalin 20160906 : Add file list and dock to move faster
     def file_item_double_clicked(self, item=None):
-        self.cur_img_idx = self.m_img_list.index(ustr(item.text()))
+        self.cur_img_idx = self.m_img_list.index(ustr(item.text().split(" ")[1]))
         filename = self.m_img_list[self.cur_img_idx]
         if filename:
             self.load_file(filename)
@@ -924,7 +924,8 @@ class MainWindow(QMainWindow, WindowMixin):
             else:
                 self.label_file.save(annotation_file_path, shapes, self.file_path, self.image_data,
                                      self.line_color.getRgb(), self.fill_color.getRgb())
-            print('Image:{0} -> Annotation:{1}'.format(self.file_path, annotation_file_path))
+            img_index_text = "| Index:" + str(self.cur_img_idx + 1) if self.img_count > 1 else ""
+            print('Image:{0} -> Annotation:{1} {2}'.format(self.file_path, annotation_file_path, img_index_text))
             return True
         except LabelFileError as e:
             self.error_message(u'Error saving label data', u'<b>%s</b>' % e)
@@ -1194,6 +1195,8 @@ class MainWindow(QMainWindow, WindowMixin):
         """
         Converts image counter to string representation.
         """
+        if self.img_count == 1:
+            return ""
         return '[{} / {}]'.format(self.cur_img_idx + 1, self.img_count)
 
     def show_bounding_box_from_annotation_file(self, file_path):
@@ -1391,8 +1394,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.m_img_list = self.scan_all_images(dir_path)
         self.img_count = len(self.m_img_list)
         self.open_next_image()
-        for imgPath in self.m_img_list:
-            item = QListWidgetItem(imgPath)
+        for index, imgPath in enumerate(self.m_img_list):
+            item = QListWidgetItem("[" + str(index + 1) + "] " + imgPath)
             self.file_list_widget.addItem(item)
 
     def verify_image(self, _value=False):
