@@ -931,7 +931,10 @@ class MainWindow(QMainWindow, WindowMixin):
             return False
 
     def copy_selected_shape(self):
-        self.add_label(self.canvas.copy_selected_shape())
+        shape = self.canvas.copy_selected_shape()
+        if not shape:
+            return
+        self.add_label(shape)
         # fix copy and delete
         self.shape_selection_changed(True)
 
