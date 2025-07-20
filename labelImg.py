@@ -288,9 +288,9 @@ class MainWindow(QMainWindow, WindowMixin):
 
         create = action(get_str('crtBox'), self.create_shape,
                         'w', 'new', get_str('crtBoxDetail'), enabled=False)
-        delete = action(get_str('delBox'), self.delete_selected_shape,
+        delete = action(get_str('delBox'), self.delete_selected_shapes,
                         'Delete', 'delete', get_str('delBoxDetail'), enabled=False)
-        copy = action(get_str('dupBox'), self.copy_selected_shape,
+        copy = action(get_str('dupBox'), self.copy_selected_shapes,
                       'Ctrl+D', 'copy', get_str('dupBoxDetail'),
                       enabled=False)
 
@@ -810,20 +810,22 @@ class MainWindow(QMainWindow, WindowMixin):
             pass
 
     # React to canvas signals.
-    def shape_selection_changed(self, selected=False):
-        if self._no_selection_slot:
-            self._no_selection_slot = False
-        else:
-            shape = self.canvas.selected_shape
-            if shape:
-                self.shapes_to_items[shape].setSelected(True)
-            else:
-                self.label_list.clearSelection()
-        self.actions.delete.setEnabled(selected)
-        self.actions.copy.setEnabled(selected)
-        self.actions.edit.setEnabled(selected)
-        self.actions.shapeLineColor.setEnabled(selected)
-        self.actions.shapeFillColor.setEnabled(selected)
+    def shape_selection_changed(self, selected_shapes):
+        self._no_selection_slot = True
+        for shape in self.canvas.selected_shapes:
+            shape.selected = False
+        self.label_list.clearSelection()
+        self.canvas.selected_shapes = selected_shapes
+        for shape in self.canvas.selected_shapes:
+            shape.selected = True
+            self.shapes_to_items[shape].setSelected(True)
+        self._no_selection_slot = False
+        n_selected = len(selected_shapes)
+        self.actions.delete.setEnabled(n_selected)
+        self.actions.copy.setEnabled(n_selected)
+        self.actions.edit.setEnabled(n_selected)
+        self.actions.shapeLineColor.setEnabled(n_selected)
+        self.actions.shapeFillColor.setEnabled(n_selected)
 
     def add_label(self, shape):
         shape.paint_label = self.display_label_option.isChecked()
@@ -931,13 +933,12 @@ class MainWindow(QMainWindow, WindowMixin):
             self.error_message(u'Error saving label data', u'<b>%s</b>' % e)
             return False
 
-    def copy_selected_shape(self):
-        shape = self.canvas.copy_selected_shape()
-        if not shape:
-            return
-        self.add_label(shape)
-        # fix copy and delete
-        self.shape_selection_changed(True)
+    def copy_selected_shapes(self):
+        shapes = self.canvas.copy_selected_shapes()
+        for shape in shapes:
+            self.add_label(shape)
+
+        self.shape_selection_changed(shapes)
 
     def combo_selection_changed(self, index):
         text = self.combo_box.cb.itemText(index)
@@ -956,7 +957,6 @@ class MainWindow(QMainWindow, WindowMixin):
         item = self.current_item()
         if item and self.canvas.editing():
             self._no_selection_slot = True
-            self.canvas.select_shape(self.items_to_shapes[item])
             shape = self.items_to_shapes[item]
             # Add Chris
             self.diffc_button.setChecked(shape.difficult)
@@ -1596,8 +1596,10 @@ class MainWindow(QMainWindow, WindowMixin):
             self.canvas.update()
             self.set_dirty()
 
-    def delete_selected_shape(self):
-        self.remove_label(self.canvas.delete_selected())
+    def delete_selected_shapes(self):
+        deleted_shapes = self.canvas.delete_selected()
+        for shape in deleted_shapes:
+            self.remove_label(shape)
         self.set_dirty()
         if self.no_shapes():
             for action in self.actions.onShapesPresent:
@@ -1607,7 +1609,8 @@ class MainWindow(QMainWindow, WindowMixin):
         color = self.color_dialog.getColor(self.line_color, u'Choose Line Color',
                                            default=DEFAULT_LINE_COLOR)
         if color:
-            self.canvas.selected_shape.line_color = color
+            for shape in self.canvas.selected_shapes:
+                shape.line_color = color
             self.canvas.update()
             self.set_dirty()
 
@@ -1615,16 +1618,18 @@ class MainWindow(QMainWindow, WindowMixin):
         color = self.color_dialog.getColor(self.fill_color, u'Choose Fill Color',
                                            default=DEFAULT_FILL_COLOR)
         if color:
-            self.canvas.selected_shape.fill_color = color
+            for shape in self.canvas.selected_shapes:
+                shape.fill_color = color
             self.canvas.update()
             self.set_dirty()
 
     def copy_shape(self):
-        if self.canvas.selected_shape is None:
+        if not self.canvas.selected_shapes:
             # True if one accidentally touches the left mouse button before releasing
             return
         self.canvas.end_move(copy=True)
-        self.add_label(self.canvas.selected_shape)
+        for shape in self.canvas.selected_shapes:
+            self.add_label(shape)
         self.set_dirty()
 
     def move_shape(self):
